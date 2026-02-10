@@ -51,6 +51,7 @@ logs/
 # Local configs
 application-local.yml
 application-local.yaml
+trading_config.yaml
 config/local/
 secrets/
 .env
