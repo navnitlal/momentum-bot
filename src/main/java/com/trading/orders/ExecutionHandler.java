@@ -1,13 +1,15 @@
 package com.trading.orders;
 
 import com.trading.ib.IBConnector;
+import com.trading.ib.ExecutionListener;
 import com.trading.ib.LockManager;
+import com.trading.ib.OrderStatusListener;
 import com.trading.ib.SymbolData;
 import com.trading.strategy.StrategyType;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ExecutionHandler implements IBConnector.ExecutionListener, IBConnector.OrderStatusListener {
+public class ExecutionHandler implements ExecutionListener, OrderStatusListener {
 
     private final IBConnector ib;
 

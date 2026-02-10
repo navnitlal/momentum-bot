@@ -6,17 +6,38 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.EnumMap;
 import java.util.Map;
 
 public class ConfigThreshold {
 
+    private static final String DEFAULT_CONFIG_PATH = "trading_config.yaml";
+
     private final Map<StrategyType, Map<Timeframe, Threshold>> thresholds = new EnumMap<>(StrategyType.class);
     private final Map<StrategyType, Map<Timeframe, Config>> configs = new EnumMap<>(StrategyType.class);
 
     public ConfigThreshold() throws Exception {
+        this(DEFAULT_CONFIG_PATH);
+    }
+
+    public ConfigThreshold(String configPath) throws Exception {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        Map<String, Map<String, Map<String, Object>>> data = mapper.readValue(new File("trading_config.yaml"), Map.class);
+
+        Map<String, Map<String, Map<String, Object>>> data;
+
+        // Try filesystem first (for overrides), then classpath
+        File externalFile = new File(configPath);
+        if (externalFile.exists()) {
+            data = mapper.readValue(externalFile, Map.class);
+        } else {
+            try (InputStream is = getClass().getClassLoader().getResourceAsStream(configPath)) {
+                if (is == null) {
+                    throw new IllegalStateException(configPath + " not found on classpath or filesystem");
+                }
+                data = mapper.readValue(is, Map.class);
+            }
+        }
 
         for (var strategyEntry : data.entrySet()) {
             StrategyType strategy = StrategyType.valueOf(strategyEntry.getKey());

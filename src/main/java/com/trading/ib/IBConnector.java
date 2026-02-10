@@ -3,6 +3,8 @@ package com.trading.ib;
 import com.ib.client.*;
 import com.trading.scanner.ScanDataEvent;
 import com.trading.strategy.StrategyType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -12,6 +14,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public class IBConnector extends IBWrapperAdapter {
+
+    private static final Logger log = LoggerFactory.getLogger(IBConnector.class);
 
     private final EClientSocket client;
     private final EReaderSignal signal;
@@ -46,7 +50,7 @@ public class IBConnector extends IBWrapperAdapter {
     // ======================== CONNECTION ========================
     public void connect(String host, int port, int clientId) {
         client.eConnect(host, port, clientId);
-        if (client.isConnected()) System.out.println("Connected to TWS at " + host + ":" + port);
+        if (client.isConnected()) log.info("Connected to TWS at {}:{}", host, port);
         startReaderThread();
         subscribeAccountSummary();
     }
@@ -55,11 +59,16 @@ public class IBConnector extends IBWrapperAdapter {
         try {
             if (readerThread != null) {
                 readerThread.interrupt();
+                readerThread.join(2000);
                 readerThread = null;
             }
-        } catch (Exception ignored) {}
-        client.eDisconnect();
-        System.out.println("Disconnected from IBKR.");
+        } catch (Exception e) {
+            log.error("Error stopping reader thread", e);
+        }
+        if (client.isConnected()) {
+            client.eDisconnect();
+        }
+        log.info("Disconnected from IBKR.");
     }
 
     private void startReaderThread() {
@@ -73,15 +82,13 @@ public class IBConnector extends IBWrapperAdapter {
                     try {
                         reader.processMsgs();
                     } catch (IOException e) {
-                        System.err.println("[IBConnector] Reader processMsgs IOException: " + e.getMessage());
-                        e.printStackTrace();
+                        log.error("Reader processMsgs IOException", e);
                     } catch (Throwable t) {
-                        System.err.println("[IBConnector] Reader thread fatal: " + t.getMessage());
-                        t.printStackTrace();
+                        log.error("Reader thread fatal error", t);
                     }
                 }
             } finally {
-                System.out.println("[IBConnector] Reader thread exiting.");
+                log.info("Reader thread exiting.");
             }
         }, "ib-reader-thread");
 
@@ -107,7 +114,7 @@ public class IBConnector extends IBWrapperAdapter {
         client.reqMktDepth(tickerId + DEPTH_OFFSET, contract, 10, true, null);
         client.reqRealTimeBars(tickerId + RTBAR_OFFSET, contract, 5, "TRADES", false, null);
 
-        System.out.printf("[IBConnector] Subscribed %s (tickerId = %d) strategy = %s%n", symbol, tickerId, strategyType);
+        log.info("Subscribed {} (tickerId = {}) strategy = {}", symbol, tickerId, strategyType);
     }
 
     public void unsubscribeSymbol(String symbol) {
@@ -123,7 +130,7 @@ public class IBConnector extends IBWrapperAdapter {
         });
 
         symbolDataMap.remove(symbol);
-        System.out.println("Unsubscribed: " + symbol);
+        log.info("Unsubscribed: {}", symbol);
     }
 
     private Contract createStockContract(String symbol) {
@@ -167,7 +174,7 @@ public class IBConnector extends IBWrapperAdapter {
     @Override
     public void nextValidId(int id) {
         orderId.set(id);
-        System.out.println("[IBConnector] nextValidId: " + id);
+        log.info("nextValidId: {}", id);
     }
 
     @Override
@@ -279,8 +286,14 @@ public class IBConnector extends IBWrapperAdapter {
     }
 
     @Override
-    public void error(int i, long l, int i1, String s, String s1) {
-//        System.err.printf("IB Error: i=%d l=%d i1=%d s=%s s1=%s %n", i, l, i1, s, s1);
+    public void error(int id, long time, int errorCode, String errorMsg, String advancedOrderRejectJson) {
+        if (errorCode == 2104 || errorCode == 2106 || errorCode == 2158) {
+            log.debug("IB info: id={} code={} msg={}", id, errorCode, errorMsg);
+        } else if (errorCode >= 2000 && errorCode < 3000) {
+            log.warn("IB warning: id={} code={} msg={}", id, errorCode, errorMsg);
+        } else {
+            log.error("IB error: id={} code={} msg={}", id, errorCode, errorMsg);
+        }
     }
 
     @Override
@@ -289,36 +302,10 @@ public class IBConnector extends IBWrapperAdapter {
                             double lastFillPrice, int clientId,
                             String whyHeld, double mktCapPrice) {
 
-        int filledQty = (filled == null) ? 0 : Integer.getInteger(filled.toString());
-        int remainingQty = (remaining == null) ? 0 : Integer.getInteger(remaining.toString());
+        int filledQty = (filled == null) ? 0 : (int) filled.longValue();
+        int remainingQty = (remaining == null) ? 0 : (int) remaining.longValue();
 
         orderStatusListeners.forEach(l -> l.onOrderStatus(null, orderId, status, filledQty, remainingQty, avgFillPrice));
     }
 
-    // ======================== LISTENER INTERFACES ========================
-    public interface TickListener {
-        void onTick(String symbol, double price, long volume, long timestamp, StrategyType currentStrategy);
-    }
-
-    public interface OrderBookListener {
-        void onOrderBookUpdate(String symbol, boolean isBid, double price, long size, int operation, StrategyType currentStrategy);
-    }
-
-    public interface AccountListener {
-        void onAccountUpdate(double availableFunds);
-    }
-
-    public interface RealTimeBarListener {
-        void onRealTimeBar(String symbol, long startTime, double open, double high,
-                           double low, double close, long volume);
-    }
-
-    public interface ExecutionListener {
-        void onExecutionConfirmed(String symbol, int filledQty, double fillPrice, StrategyType strategyType);
-    }
-
-    public interface OrderStatusListener {
-        void onOrderStatus(String symbol, int orderId, String status,
-                           int filled, int remaining, double avgFillPrice);
-    }
 }

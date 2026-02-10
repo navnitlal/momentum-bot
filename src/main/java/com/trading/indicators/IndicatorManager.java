@@ -4,6 +4,7 @@ import com.trading.datafeed.Timeframe;
 import com.trading.datafeed.OHLCV;
 import com.trading.ib.IBConnector;
 import com.trading.ib.LockManager;
+import com.trading.ib.OrderBookListener;
 import com.trading.indicators.averages.*;
 import com.trading.indicators.momentum.*;
 import com.trading.indicators.orderbook.OrderBookIndicator;
@@ -15,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class IndicatorManager implements IBConnector.OrderBookListener {
+public class IndicatorManager implements OrderBookListener {
 
     private final ConfigThreshold config;
     private final LockManager lockManager;
@@ -94,7 +95,7 @@ public class IndicatorManager implements IBConnector.OrderBookListener {
     public boolean isBBAboveUpper(String symbol, Timeframe tf) { return bollingerBand.isAboveUpper(symbol, tf); }
     public boolean isBBBelowLower(String symbol, Timeframe tf) { return bollingerBand.isBelowLower(symbol, tf); }
     public boolean isPriceAboveVWAP(String symbol, Timeframe tf) { return vwap.isAboveVWAP(symbol, tf); }
-    public boolean isPriceBelowVWAP(String symbol, Timeframe tf) { return vwap.isAboveVWAP(symbol, tf); }
+    public boolean isPriceBelowVWAP(String symbol, Timeframe tf) { return vwap.isBelowVWAP(symbol, tf); }
     public boolean isUptrend(String symbol, Timeframe tf) { return trend.isUpwardTrend(symbol, tf); }
     public boolean isDowntrend(String symbol, Timeframe tf) { return trend.isDownwardTrend(symbol, tf); }
 }

@@ -5,12 +5,16 @@ import com.trading.indicators.Indicator;
 import com.trading.settings.ConfigThreshold;
 import com.trading.settings.Threshold;
 import com.trading.strategy.StrategyType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SignalValidator {
+
+    private static final Logger log = LoggerFactory.getLogger(SignalValidator.class);
 
     private final ConfigThreshold configThreshold;
     private final Map<Indicator, Map<Timeframe, Object>> actualValues = new ConcurrentHashMap<>();
@@ -64,8 +68,8 @@ public class SignalValidator {
             case TREND -> (boolean) actualValue == threshold.trendOK();
         };
 
-//        System.out.printf("[BUY] SYMBOL: %s | Indicator: %s | TF: %s | Actual: %s | Threshold: %s | Result: %s%n",
-//                symbol, indicator, tf, actualValue, formatThreshold(indicator, threshold), result);
+        log.trace("[BUY] SYMBOL: {} | Indicator: {} | TF: {} | Actual: {} | Threshold: {} | Result: {}",
+                symbol, indicator, tf, actualValue, formatThreshold(indicator, threshold), result);
 
         return result;
     }
@@ -83,8 +87,8 @@ public class SignalValidator {
             case TREND -> (boolean) actualValue == !threshold.trendOK();
         };
 
-//        System.out.printf("[SELL] SYMBOL: %s | Indicator: %s | TF: %s | Actual: %s | Threshold: %s | Result: %s%n",
-//                symbol, indicator, tf, actualValue, formatThreshold(indicator, threshold), result);
+        log.trace("[SELL] SYMBOL: {} | Indicator: {} | TF: {} | Actual: {} | Threshold: {} | Result: {}",
+                symbol, indicator, tf, actualValue, formatThreshold(indicator, threshold), result);
 
         return result;
     }

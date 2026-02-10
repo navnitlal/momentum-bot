@@ -1,0 +1,27 @@
+connection:
+  host: "127.0.0.1"
+  livePort: 7496
+  simPort: 7497
+  clientId: 0
+
+scanner:
+  minPrice: 2.0
+  maxPrice: 20.0
+  scanCode: "TOP_PERC_GAIN"
+  minVolume: 100000
+  scanLimit: 5
+  timeoutMs: 2000
+
+scheduler:
+  scanIntervalMs: 5000
+  scanStartDelayMs: 0
+  strategyIntervalMs: 1000
+  strategyStartDelayMs: 1000
+  printIntervalMs: 1000
+  printStartDelayMs: 2000
+
+trading:
+  tradeLogPath: "data/trades.csv"
+  maxAllocationFraction: 0.7
+  maxSharesPerStock: 1000
+  riskPerTradeFraction: 0.01
