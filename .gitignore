@@ -12,6 +12,7 @@ build/
 *.class
 *.log
 *.jar
+!libs/*.jar
 *.war
 *.ear
 hs_err_pid*

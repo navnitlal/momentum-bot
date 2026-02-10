@@ -6,6 +6,8 @@ import com.trading.orders.TradeExecutor;
 import com.trading.scanner.IBKRScanner;
 import com.trading.strategy.StrategyManager;
 import com.trading.strategy.StrategyType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalTime;
 import java.util.*;
@@ -13,12 +15,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ScannerService {
 
+    private static final Logger log = LoggerFactory.getLogger(ScannerService.class);
+
     private final IBKRScanner scanner;
     private final IBConnector ib;
     private final TradeExecutor tradeExecutor;
     private final StrategyManager strategyManager;
     private final ExecutionHandler executionHandler;
     private final BarPipelineService barPipelineService;
+    private final int scannerTimeoutMs;
 
     private final Set<String> activeSymbols = ConcurrentHashMap.newKeySet();
 
@@ -27,19 +32,21 @@ public class ScannerService {
                           IBKRScanner scanner,
                           TradeExecutor tradeExecutor,
                           ExecutionHandler executionHandler,
-                          BarPipelineService barPipelineService) {
+                          BarPipelineService barPipelineService,
+                          int scannerTimeoutMs) {
         this.ib = ib;
         this.strategyManager = strategyManager;
         this.scanner = scanner;
         this.tradeExecutor = tradeExecutor;
         this.executionHandler = executionHandler;
         this.barPipelineService = barPipelineService;
+        this.scannerTimeoutMs = scannerTimeoutMs;
     }
 
 
     public void scanAndUpdate() {
         try {
-            List<String> scannedSymbols = scanner.scanAndFilter(2_000);
+            List<String> scannedSymbols = scanner.scanAndFilter(scannerTimeoutMs);
             Set<String> scannedSet = new HashSet<>(scannedSymbols);
 
             for (String added : scannedSet) {
@@ -60,7 +67,7 @@ public class ScannerService {
             }
 
         } catch (Exception e) {
-            System.err.println("[ScannerService] Error during scanning: " + e.getMessage());
+            log.error("Error during scanning", e);
         }
     }
 

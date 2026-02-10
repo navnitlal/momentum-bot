@@ -2,6 +2,7 @@ package com.trading.datafeed;
 
 import com.trading.ib.IBConnector;
 import com.trading.ib.LockManager;
+import com.trading.ib.RealTimeBarListener;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,7 +10,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
 
-public class BarManager implements IBConnector.RealTimeBarListener {
+public class BarManager implements RealTimeBarListener {
 
     private final Map<Timeframe, Map<String, OHLCV>> currentOpenBars = new ConcurrentHashMap<>();
     private final Map<Timeframe, Map<String, ConcurrentLinkedDeque<OHLCV>>> ohlcvData = new ConcurrentHashMap<>();

@@ -1,25 +1,36 @@
 plugins {
     id 'java'
     id 'application'
+    id 'com.gradleup.shadow' version '8.3.5'
 }
 
 repositories {
     mavenCentral()
 }
 
+def jacksonVersion = '2.18.1'
+
 dependencies {
     implementation files('libs/TwsApi.jar')
     implementation files('libs/protobuf-java-4.29.3.jar')
     implementation 'org.apache.commons:commons-csv:1.10.0'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.1'
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.4'
+    implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jacksonVersion}"
+    implementation 'ch.qos.logback:logback-classic:1.5.16'
 }
 
 application {
-    mainClass = 'com.trading.MomentumBot'
+    mainClass = 'com.trading.bot.BotLauncher'
 }
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
+}
+
+shadowJar {
+    archiveBaseName.set('momentum-bot')
+    archiveClassifier.set('all')
+    archiveVersion.set('')
+    mergeServiceFiles()
 }
